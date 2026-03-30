@@ -33,9 +33,89 @@
             font-size: 1.1rem;
             opacity: 0.9;
         }
+        .location-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .location-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .location-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .location-status.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .location-bar button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .location-bar button:hover {
+            background: #5a6fd6;
+        }
+        .location-bar button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .filter-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar select, .filter-bar input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .filter-bar button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        .filter-bar button:hover {
+            background: #5a6fd6;
+        }
         .school-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
             gap: 20px;
             margin-top: 30px;
         }
@@ -49,6 +129,9 @@
         .school-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        .school-card.nearby {
+            border: 2px solid #4caf50;
         }
         .school-header {
             display: flex;
@@ -82,6 +165,20 @@
             font-size: 1.5rem;
             font-weight: bold;
             color: #ff9800;
+        }
+        .distance-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .distance-badge.nearby {
+            background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
         }
         .info-row {
             display: flex;
@@ -124,40 +221,52 @@
             color: #666;
             line-height: 1.6;
         }
+        .map-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+        .map-link:hover {
+            text-decoration: underline;
+        }
         footer {
             text-align: center;
             color: white;
             padding: 40px 0;
             opacity: 0.8;
         }
-        .filter-bar {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+        .sort-options {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
+            gap: 10px;
             align-items: center;
         }
-        .filter-bar select, .filter-bar input {
+        .sort-options label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
             padding: 10px 15px;
-            border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 0.9rem;
-        }
-        .filter-bar button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.3s;
-        }
-        .filter-bar button:hover {
-            background: #5a6fd6;
+            display: none;
         }
     </style>
 </head>
@@ -167,6 +276,26 @@
             <h1>🏫 上海闵行区私立学校评价</h1>
             <p>汇集真实家长评价，助力择校决策</p>
         </header>
+
+        <div class="location-bar">
+            <div class="location-info">
+                <div class="location-status" id="locationStatus">
+                    <span>📍</span>
+                    <span>未获取位置 - 点击按钮获取您当前位置</span>
+                </div>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+            <div class="sort-options">
+                <label>排序方式：</label>
+                <select id="sortBy" onchange="sortSchools()">
+                    <option value="rating">按评分</option>
+                    <option value="distance" id="distanceSortOption" disabled>按距离（需获取位置）</option>
+                </select>
+            </div>
+            <button onclick="getLocation()" id="locationBtn">
+                <span id="btnText">📍 获取我的位置</span>
+            </button>
+        </div>
 
         <div class="filter-bar">
             <select id="typeFilter">
@@ -196,6 +325,7 @@
     </div>
 
     <script>
+        // 学校数据（包含大致经纬度坐标）
         const schools = [
             {
                 name: "上海星河湾双语学校",
@@ -204,6 +334,9 @@
                 rating: 4.6,
                 tuition: "15-18万/年",
                 location: "闵行区金都路",
+                address: "上海市闵行区金都路2588号",
+                lat: 31.0456,
+                lng: 121.4123,
                 students: "约2000人",
                 tags: ["AP课程", "双语教学", "升学率高"],
                 review: "学术氛围浓厚，师资力量强，毕业生多进入世界名校。课业压力较大，适合目标明确的学生。"
@@ -215,6 +348,9 @@
                 rating: 4.5,
                 tuition: "12-20万/年",
                 location: "闵行区虹桥镇",
+                address: "上海市闵行区虹桥镇金汇路",
+                lat: 31.1856,
+                lng: 121.3856,
                 students: "约1500人",
                 tags: ["IB课程", "国际化", "设施一流"],
                 review: "国际化程度高，外籍教师比例大。注重全人教育，课外活动丰富。学费较高但物有所值。"
@@ -226,6 +362,9 @@
                 rating: 4.7,
                 tuition: "25-35万/年",
                 location: "闵行区马桥镇",
+                address: "上海市闵行区马桥镇茜浦泾路2000号",
+                lat: 31.0256,
+                lng: 121.3256,
                 students: "约800人",
                 tags: ["英式教育", "A-Level", "顶尖师资"],
                 review: "上海顶尖国际学校之一，纯正英式教育。毕业生多进入牛津剑桥等名校。学费昂贵，门槛较高。"
@@ -237,6 +376,9 @@
                 rating: 4.2,
                 tuition: "8-12万/年",
                 location: "闵行区平阳路",
+                address: "上海市闵行区平阳路150号",
+                lat: 31.1456,
+                lng: 121.4056,
                 students: "约1800人",
                 tags: ["性价比高", "IB认证", "艺术特色"],
                 review: "老牌民办学校，性价比不错。近年引进IB课程，国际化程度提升。艺术教育是特色。"
@@ -248,6 +390,9 @@
                 rating: 4.4,
                 tuition: "18-25万/年",
                 location: "闵行区华漕镇",
+                address: "上海市闵行区华漕镇金辉路",
+                lat: 31.2156,
+                lng: 121.2956,
                 students: "约1200人",
                 tags: ["诺德安达集团", "IB课程", "全球资源"],
                 review: "诺德安达教育集团成员，可享受全球教育资源。校园设施现代化，师生比优秀。"
@@ -259,6 +404,9 @@
                 rating: 4.0,
                 tuition: "10-15万/年",
                 location: "闵行区北松公路",
+                address: "上海市闵行区北松公路",
+                lat: 31.0856,
+                lng: 121.4556,
                 students: "约1000人",
                 tags: ["美式教育", "AP课程", "寄宿制"],
                 review: "美式教育理念，注重学生个性发展。寄宿条件较好，适合外地学生。学术压力相对适中。"
@@ -270,6 +418,9 @@
                 rating: 4.8,
                 tuition: "16万/年",
                 location: "闵行区七宝镇",
+                address: "上海市闵行区七宝镇虹莘路3233号",
+                lat: 31.1556,
+                lng: 121.3556,
                 students: "约600人",
                 tags: ["七宝中学合作", "IB课程", "升学顶尖"],
                 review: "七宝中学与德怀特合作，学术实力强。IB成绩优异，毕业生多进入美国前30大学。竞争激烈。"
@@ -281,6 +432,9 @@
                 rating: 4.3,
                 tuition: "3-5万/年",
                 location: "闵行区江川路",
+                address: "上海市闵行区江川东路",
+                lat: 31.0056,
+                lng: 121.4256,
                 students: "约1200人",
                 tags: ["老牌民办", "中考成绩好", "学费亲民"],
                 review: "闵行区老牌民办学校，中考成绩稳定。学费相对亲民，是性价比较高的选择。课业管理严格。"
@@ -292,20 +446,175 @@
                 rating: 4.1,
                 tuition: "3-4万/年",
                 location: "闵行区浦江镇",
+                address: "上海市闵行区浦江镇浦锦路",
+                lat: 31.0756,
+                lng: 121.5056,
                 students: "约900人",
                 tags: ["上师大背景", "师资稳定", "素质教育"],
                 review: "上海师范大学背景，师资较稳定。注重素质教育，作业量适中。适合追求全面发展的家庭。"
             }
         ];
 
+        let userLocation = null;
+        let schoolsWithDistance = [...schools];
+
+        // 计算两点间距离（使用Haversine公式）
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371; // 地球半径（公里）
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // 估算开车时间（考虑上海市区交通情况）
+        function estimateDriveTime(distance) {
+            // 市区平均速度约25-35km/h
+            const avgSpeed = 30;
+            const timeHours = distance / avgSpeed;
+            const timeMinutes = Math.round(timeHours * 60);
+            
+            if (timeMinutes < 60) {
+                return `${timeMinutes}分钟`;
+            } else {
+                const hours = Math.floor(timeMinutes / 60);
+                const mins = timeMinutes % 60;
+                return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+            }
+        }
+
+        // 获取用户位置
+        function getLocation() {
+            const btn = document.getElementById('locationBtn');
+            const btnText = document.getElementById('btnText');
+            const status = document.getElementById('locationStatus');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            if (!navigator.geolocation) {
+                showError("您的浏览器不支持地理定位功能");
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="loading"></span> 获取中...';
+            errorMsg.style.display = 'none';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    
+                    // 计算每所学校的距离
+                    schoolsWithDistance = schools.map(school => {
+                        const distance = calculateDistance(
+                            userLocation.lat, userLocation.lng,
+                            school.lat, school.lng
+                        );
+                        return {
+                            ...school,
+                            distance: distance,
+                            driveTime: estimateDriveTime(distance)
+                        };
+                    });
+
+                    // 更新UI
+                    status.className = 'location-status active';
+                    status.innerHTML = `
+                        <span>📍</span>
+                        <span>已获取位置 - 已计算到${schools.length}所学校的距离</span>
+                    `;
+                    
+                    btnText.textContent = '📍 重新获取位置';
+                    btn.disabled = false;
+                    
+                    // 启用距离排序选项
+                    const distanceSort = document.getElementById('distanceSortOption');
+                    distanceSort.disabled = false;
+                    distanceSort.textContent = '按距离排序';
+                    
+                    // 默认按距离排序
+                    document.getElementById('sortBy').value = 'distance';
+                    sortSchools();
+                },
+                (error) => {
+                    btn.disabled = false;
+                    btnText.textContent = '📍 获取我的位置';
+                    
+                    let message = "获取位置失败";
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            message = "请允许访问您的位置信息";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            message = "无法获取位置信息，请检查GPS是否开启";
+                            break;
+                        case error.TIMEOUT:
+                            message = "获取位置超时，请重试";
+                            break;
+                    }
+                    showError(message);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        }
+
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMessage');
+            errorMsg.textContent = '⚠️ ' + message;
+            errorMsg.style.display = 'block';
+            setTimeout(() => {
+                errorMsg.style.display = 'none';
+            }, 5000);
+        }
+
+        function sortSchools() {
+            const sortBy = document.getElementById('sortBy').value;
+            
+            if (sortBy === 'distance' && userLocation) {
+                schoolsWithDistance.sort((a, b) => a.distance - b.distance);
+            } else {
+                schoolsWithDistance.sort((a, b) => b.rating - a.rating);
+            }
+            
+            filterSchools();
+        }
+
         function renderSchools(schoolList) {
             const grid = document.getElementById('schoolGrid');
-            grid.innerHTML = schoolList.map(school => `
-                <div class="school-card" data-type="${school.type}" data-stage="${school.stage}">
+            
+            if (schoolList.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; color: white; padding: 40px;">没有找到匹配的学校</div>';
+                return;
+            }
+            
+            grid.innerHTML = schoolList.map((school, index) => {
+                const isNearby = school.distance && school.distance < 5;
+                const distanceHtml = school.distance ? `
+                    <div class="distance-badge ${isNearby ? 'nearby' : ''}">
+                        <span>🚗</span>
+                        <span>${school.distance.toFixed(1)}公里 · 约${school.driveTime}</span>
+                        ${isNearby ? '<span>⭐最近</span>' : ''}
+                    </div>
+                ` : '';
+                
+                const mapUrl = `https://map.baidu.com/search/${encodeURIComponent(school.address)}`;
+                
+                return `
+                <div class="school-card ${isNearby ? 'nearby' : ''}" data-type="${school.type}" data-stage="${school.stage}">
                     <div class="school-header">
                         <div class="school-name">${school.name}</div>
                         <span class="school-type">${school.type}</span>
                     </div>
+                    ${distanceHtml}
                     <div class="rating">
                         <span class="stars">${'★'.repeat(Math.floor(school.rating))}${'☆'.repeat(5-Math.floor(school.rating))}</span>
                         <span class="score">${school.rating}</span>
@@ -321,12 +630,15 @@
                     <div class="tags">
                         ${school.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
+                    <a href="${mapUrl}" target="_blank" class="map-link">
+                        🗺️ 查看地图导航
+                    </a>
                     <div class="review-section">
                         <div class="review-title">家长评价</div>
                         <div class="review-text">${school.review}</div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function filterSchools() {
@@ -334,7 +646,7 @@
             const stage = document.getElementById('stageFilter').value;
             const search = document.getElementById('searchInput').value.toLowerCase();
 
-            let filtered = schools;
+            let filtered = schoolsWithDistance;
             
             if (type) {
                 filtered = filtered.filter(s => s.type === type);
@@ -350,7 +662,7 @@
         }
 
         // 初始化渲染
-        renderSchools(schools);
+        renderSchools(schoolsWithDistance);
     </script>
 </body>
 </html>
