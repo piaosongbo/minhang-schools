@@ -458,6 +458,16 @@
         let userLocation = null;
         let schoolsWithDistance = [...schools];
 
+        // 检查位置并提示
+        function checkLocation() {
+            if (!userLocation) {
+                if (confirm('💡 提示：获取您的位置后，可以显示从家到学校的导航路线。\n\n是否现在获取位置？')) {
+                    getLocation();
+                }
+            }
+            return true;
+        }
+
         // 计算两点间距离（使用Haversine公式）
         function calculateDistance(lat1, lng1, lat2, lng2) {
             const R = 6371; // 地球半径（公里）
@@ -606,7 +616,23 @@
                     </div>
                 ` : '';
                 
-                const mapUrl = `https://map.baidu.com/search/${encodeURIComponent(school.address)}`;
+                // 根据是否有用户位置，生成不同的地图链接
+                let mapUrl;
+                if (userLocation) {
+                    // 使用百度地图路线规划（从我家到学校）
+                    mapUrl = `https://api.map.baidu.com/direction?origin=${userLocation.lat},${userLocation.lng}&destination=${school.lat},${school.lng}&mode=driving&output=html`;
+                } else {
+                    // 没有位置时，只显示学校位置
+                    mapUrl = `https://api.map.baidu.com/marker?location=${school.lat},${school.lng}&title=${encodeURIComponent(school.name)}&content=${encodeURIComponent(school.address)}&output=html`;
+                }
+                
+                // 备选：使用高德地图（更稳定）
+                let amapUrl;
+                if (userLocation) {
+                    amapUrl = `https://uri.amap.com/navigation?from=${userLocation.lng},${userLocation.lat},我的位置&to=${school.lng},${school.lat},${encodeURIComponent(school.name)}&mode=car&policy=1`;
+                } else {
+                    amapUrl = `https://uri.amap.com/marker?position=${school.lng},${school.lat}&name=${encodeURIComponent(school.name)}`;
+                }
                 
                 return `
                 <div class="school-card ${isNearby ? 'nearby' : ''}" data-type="${school.type}" data-stage="${school.stage}">
@@ -630,9 +656,12 @@
                     <div class="tags">
                         ${school.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
-                    <a href="${mapUrl}" target="_blank" class="map-link">
-                        🗺️ 查看地图导航
-                    </a>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                        <a href="${amapUrl}" target="_blank" class="map-link" onclick="return checkLocation()">
+                            🗺️ ${userLocation ? '查看导航路线' : '查看学校位置'}
+                        </a>
+                        ${userLocation ? `<span style="color: #999; font-size: 0.8rem;">(${school.address})</span>` : ''}
+                    </div>
                     <div class="review-section">
                         <div class="review-title">家长评价</div>
                         <div class="review-text">${school.review}</div>
